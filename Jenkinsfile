@@ -1,31 +1,42 @@
 pipeline {
-    agent {label 'Agent-01'}
-      
+    // The Agent we are using is agent-01
+    agent { label 'Agent-01' }
+    
+    // Define the Maven tool
     tools {
         maven 'maven3.6'
-        jdk 'jdk17'
     }
- 
-    stages {
 
-        stage('Compile') {
+    stages {
+         stage('Present Dir & List Files') {
             steps {
-             sh 'mvn compile'
+                echo "Running in directory:"
+                sh 'pwd'
+                echo "Listing repository contents:"
+                // This command will show you the file structure
+                sh 'ls -R' 
             }
         }
-        stage('test') {
+        
+        stage('Build & Package') {
             steps {
-                sh 'mvn test'
+                // Change into the subdirectory that contains pom.xml
+                dir('my-maven-project') {
+                    echo 'Compiling, testing, and packaging the code...'
+                    sh 'mvn clean package' 
+                }
             }
         }
-        stage('Package') {
+        
+        stage('SonarQube Analysis') {
             steps {
-               sh 'mvn package'
-            }
-        }
-        stage('Hello') {
-            steps {
-                echo 'Hello World Hii'
+                // Also change directory here for the Sonar analysis
+                dir('my-maven-project') {
+                    echo 'Running SonarQube analysis...'
+                    withSonarQubeEnv('sonarqube-server') {
+                        sh 'mvn sonar:sonar -Dsonar.projectName=BoardGame01 -Dsonar.projectKey=BoardGame'
+                    }
+                }
             }
         }
     }
